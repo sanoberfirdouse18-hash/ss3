@@ -1,1 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Subway Surfers Game</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #111;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game {
+            position: relative;
+            width: 400px;
+            height: 700px;
+            overflow: hidden;
+            background: linear-gradient(
+                #63c7ff 0%,
+                #b8e8ff 35%,
+                #555 35%,
+                #222 100%
+            );
+        }
+
+        /* Road */
+        #road {
+            position: absolute;
+            left: 50px;
+            top: 0;
+            width: 300px;
+            height: 100%;
+            background: #444;
+        }
+
+        /* Lane lines */
+        .lane-line {
+            position: absolute;
+            width: 5px;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to bottom,
+                white 0px,
+                white 30px,
+                transparent 30px,
+                transparent 60px
+            );
+            opacity: 0.8;
+        }
+
+        .line1 {
+            left: 150px;
+        }
+
+        .line2 {
+            left: 250px;
+        }
+
+        /* Player */
+        #player {
+            position: absolute;
+            width: 45px;
+            height: 65px;
+            background: #1677ff;
+            border-radius: 12px;
+            bottom: 70px;
+            left: 177px;
+            z-index: 10;
+            transition: left 0.12s;
+        }
+
+        #player::before {
+            content: "";
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: #ffd0a0;
+            border-radius: 50%;
+            top: -22px;
+            left: 8px;
+        }
+
+        #player::after {
+            content: "";
+            position: absolute;
+            width: 45px;
+            height: 10px;
+            background: #111;
+            bottom: -5px;
+            left: 0;
+            border-radius: 5px;
+        }
+
+        /* Jump */
+        .jump {
+            animation: jump 0.7s ease;
+        }
+
+        @keyframes jump {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-150px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        /* Obstacles */
+        .obstacle {
+            position: absolute;
+            width: 50px;
+            height: 65px;
+            background: #e53935;
+            border-radius: 8px;
+            top: -80px;
+            z-index: 5;
+        }
+
+        /* Coins */
+        .coin {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: gold;
+            border: 4px solid #ff9800;
+            border-radius: 50%;
+            top: -40px;
+            z-index: 6;
+        }
+
+        /* Score */
+        #score {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            z-index: 20;
+        }
+
+        #coins {
+            position: absolute;
+            top: 45px;
+            left: 15px;
+            color: gold;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 20;
+        }
+
+        /* Start/Game Over */
+        #menu {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 100;
+        }
+
+        #menu h1 {
+            font-size: 42px;
+            color: #ffd600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #menu p {
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        button {
+            border: none;
+            padding: 14px 30px;
+            border-radius: 10px;
+            background: #ff9800;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #f57c00;
+        }
+
+        /* Mobile controls */
+        #controls {
+            position: absolute;
+            bottom: 15px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            z-index: 30;
+        }
+
+        .control {
+            width: 70px;
+            height: 50px;
+            border: none;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 25px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="game">
+
+        <div id="road">
+
+            <div class="lane-line line1"></div>
+            <div class="lane-line line2"></div>
+
+        </div>
+
+        <div id="player"></div>
+
+        <div id="score">
+            Score: 0
+        </div>
+
+        <div id="coins">
+            Coins: 0
+        </div>
+
+        <div id="menu">
+
+            <h1>SUBWAY RUNNER</h1>
+
+            <p>
+                ← → Move | SPACE Jump
+            </p>
+
+            <button onclick="startGame()">
+                START GAME
+            </button>
+
+        </div>
+
+        <div id="controls">
+
+            <button class="control" onclick="moveLeft()">←</button>
+
+            <button class="control" onclick="jump()">↑</button>
+
+            <button class="control" onclick="moveRight()">→</button>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const player = document.getElementById("player");
+        const game = document.getElementById("game");
+        const menu = document.getElementById("menu");
+
+        const scoreText = document.getElementById("score");
+        const coinsText = document.getElementById("coins");
+
+        let lane = 1;
+
+        let score = 0;
+        let coins = 0;
+
+        let gameRunning = false;
+
+        let speed = 6;
+
+        let objects = [];
+
+        const lanes = [77, 177, 277];
+
+        function startGame() {
+
+            menu.style.display = "none";
+
+            gameRunning = true;
+
+            score = 0;
+            coins = 0;
+            speed = 6;
+
+            objects.forEach(obj => obj.remove());
+
+            objects = [];
+
+            lane = 1;
+
+            player.style.left = lanes[lane] + "px";
+
+            gameLoop();
+        }
+
+        function moveLeft() {
+
+            if (!gameRunning) return;
+
+            if (lane > 0) {
+
+                lane--;
+
+                player.style.left =
+                    lanes[lane] + "px";
+            }
+        }
+
+        function moveRight() {
+
+            if (!gameRunning) return;
+
+            if (lane < 2) {
+
+                lane++;
+
+                player.style.left =
+                    lanes[lane] + "px";
+            }
+        }
+
+        function jump() {
+
+            if (!gameRunning) return;
+
+            if (player.classList.contains("jump")) {
+                return;
+            }
+
+            player.classList.add("jump");
+
+            setTimeout(() => {
+
+                player.classList.remove("jump");
+
+            }, 700);
+        }
+
+        function createObstacle() {
+
+            const obstacle =
+                document.createElement("div");
+
+            obstacle.classList.add("obstacle");
+
+            const obstacleLane =
+                Math.floor(Math.random() * 3);
+
+            obstacle.style.left =
+                lanes[obstacleLane] + "px";
+
+            obstacle.style.top = "-80px";
+
+            game.appendChild(obstacle);
+
+            objects.push(obstacle);
+        }
+
+        function createCoin() {
+
+            const coin =
+                document.createElement("div");
+
+            coin.classList.add("coin");
+
+            const coinLane =
+                Math.floor(Math.random() * 3);
+
+            coin.style.left =
+                (lanes[coinLane] + 8) + "px";
+
+            coin.style.top = "-40px";
+
+            coin.dataset.lane = coinLane;
+
+            game.appendChild(coin);
+
+            objects.push(coin);
+        }
+
+        function collision(a, b) {
+
+            const rect1 =
+                a.getBoundingClientRect();
+
+            const rect2 =
+                b.getBoundingClientRect();
+
+            return !(
+                rect1.right < rect2.left ||
+                rect1.left > rect2.right ||
+                rect1.bottom < rect2.top ||
+                rect1.top > rect2.bottom
+            );
+        }
+
+        function gameOver() {
+
+            gameRunning = false;
+
+            menu.style.display = "flex";
+
+            menu.innerHTML = `
+                <h1>GAME OVER</h1>
+
+                <p>
+                    Score: ${score}
+                </p>
+
+                <p>
+                    Coins: ${coins}
+                </p>
+
+                <button onclick="startGame()">
+                    PLAY AGAIN
+                </button>
+            `;
+        }
+
+        function gameLoop() {
+
+            if (!gameRunning) return;
+
+            objects.forEach((object, index) => {
+
+                let top =
+                    parseInt(object.style.top);
+
+                top += speed;
+
+                object.style.top =
+                    top + "px";
+
+                // Collision
+                if (collision(player, object)) {
+
+                    if (
+                        object.classList.contains("coin")
+                    ) {
+
+                        coins++;
+
+                        coinsText.innerText =
+                            "Coins: " + coins;
+
+                        object.remove();
+
+                        objects.splice(index, 1);
+
+                    } else {
+
+                        gameOver();
+                    }
+                }
+
+                // Remove objects
+                if (top > 720) {
+
+                    object.remove();
+
+                    objects.splice(index, 1);
+
+                    score++;
+
+                    scoreText.innerText =
+                        "Score: " + score;
+                }
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Keyboard
+        document.addEventListener(
+            "keydown",
+            function(event) {
+
+                if (event.key === "ArrowLeft" ||
+                    event.key.toLowerCase() === "a") {
+
+                    moveLeft();
+                }
+
+                if (event.key === "ArrowRight" ||
+                    event.key.toLowerCase() === "d") {
+
+                    moveRight();
+                }
+
+                if (
+                    event.key === "ArrowUp" ||
+                    event.key === " " ||
+                    event.key.toLowerCase() === "w"
+                ) {
+
+                    event.preventDefault();
+
+                    jump();
+                }
+            }
+        );
+
+        // Spawn objects
+        setInterval(() => {
+
+            if (!gameRunning) return;
+
+            if (Math.random() > 0.35) {
+
+                createObstacle();
+
+            } else {
+
+                createCoin();
+            }
+
+        }, 900);
+
+    </script>
+
+</body>
+
+</html>
